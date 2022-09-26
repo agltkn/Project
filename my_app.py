@@ -1,40 +1,36 @@
 import streamlit as st
 import pickle
 import pandas as pd
+from sklearn.compose import make_column_transformer
+from sklearn.preprocessing import OrdinalEncoder
 
 
 st.sidebar.title('Car Price Prediction')
 html_temp = """
-<div style="background-color:red;padding:10px">
-<h2 style="color:white;text-align:center;">D1201-Ahmet Auto Scout Project </h2>
+<div style="background-color:blue;padding:10px">
+<h2 style="color:white;text-align:center;">Streamlit ML Cloud App </h2>
 </div>"""
 st.markdown(html_temp,unsafe_allow_html=True)
 
 
-age=st.sidebar.selectbox("What is the age of your car:",(0,1,2,3,4,5))
-hp=st.sidebar.slider("What is the hp of your car?", 60, 300, step=5)
-km=st.sidebar.slider("What is the km of your car", 0,200000, step=500)
+age=st.sidebar.selectbox("What is the age of your car:",(0,1,2,3))
+hp=st.sidebar.slider("What is the hp_kw of your car?", 40, 300, step=5)
+km=st.sidebar.slider("What is the km of your car", 0,350000, step=1000)
 gearing_type=st.sidebar.radio('Select gear type',('Automatic','Manual','Semi-automatic'))
-car_model=st.sidebar.selectbox("Select model of your car", ('A1', 'A2', 'A3','Astra','Clio','Corsa','Espace','Insignia'))
+car_model=st.sidebar.selectbox("Select model of your car", ('Audi A1', 'Audi A3', 'Opel Astra', 'Opel Corsa', 'Opel Insignia', 'Renault Clio', 'Renault Duster', 'Renault Espace'))
 
 
-model_name=st.selectbox("Select your model:",("XGBOOST","Random Forest"))
-
-if model_name=="XGBOOST":
-	model=pickle.load(open("xgb_model","rb"))
-	st.success("You selected {} model".format(model_name))
-else :
-	model=pickle.load(open("rf_model","rb"))
-	st.success("You selected {} model".format(model_name))
-
+richard_model=pickle.load(open("rf_model_new","rb"))
+richard_transformer = pickle.load(open('transformer', 'rb'))
 
 
 my_dict = {
     "age": age,
-    "hp": hp,
+    "hp_kW": hp,
     "km": km,
-    "model": car_model,
-    'gearing_type':gearing_type
+    'Gearing_Type':gearing_type,
+    "make_model": car_model
+    
 }
 
 df = pd.DataFrame.from_dict([my_dict])
@@ -43,18 +39,11 @@ df = pd.DataFrame.from_dict([my_dict])
 st.header("The configuration of your car is below")
 st.table(df)
 
-columns= ['age','hp', 'km', 'model_A1', 'model_A2', 'model_A3', 'model_Astra', 'model_Clio', 'model_Corsa', 'model_Espace',
-'model_Insignia',
-'gearing_type_Automatic',
-'gearing_type_Manual',
-'gearing_type_Semi-automatic']
-
-
-df = pd.get_dummies(df).reindex(columns=columns, fill_value=0)
+df2 = richard_transformer.transform(df)
 
 st.subheader("Press predict if configuration is okay")
 
 if st.button("Predict"):
-    prediction = model.predict(df)
+    prediction = richard_model.predict(df2)
     st.success("The estimated price of your car is €{}. ".format(int(prediction[0])))
     
